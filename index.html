@@ -476,7 +476,7 @@ footer a:hover{color:var(--gold)}
 </div>
 
 <footer>
-  <div>© <span id="year"></span> <span id="footname"></span></div>
+  <div>© <span id="year"></span> <span id="footname"></span> · v7.3</div>
   <div><a href="#top">回到顶部 ↑</a></div>
 </footer>
 
@@ -631,19 +631,8 @@ const SITE = {
      lyrKey: 取 LYRICS 里的歌词数组；没有则显示"纯音乐/无歌词"
   */
   tracks: [
-    /* ---- 原创歌曲 ---- */
     { g:"原创歌曲", title:"青萍剑行", artist:"一剑一酒一乾坤 · 主题曲（女声）", tag:"武侠", lyrKey:"qingping-jianxing",
       src:"qingping-jianxing.mp3", cover:"music/qingping-jianxing.jpg" },
-    { g:"原创歌曲", title:"真心总被谎言辜负", artist:"单曲", tag:"伤感 · 都市", lyrKey:"zhenxin-huangyan",
-      src:"zhenxin-huangyan.mp3", cover:"music/zhenxin-huangyan.jpg" },
-    { g:"原创歌曲", title:"人生就要潇洒走", artist:"单曲", tag:"洒脱", lyrKey:"xiaosa-zou",
-      src:"xiaosa-zou.mp3", cover:"music/xiaosa-zou.jpg" },
-    { g:"原创歌曲", title:"海风吹不散的约定", artist:"单曲", tag:"抒情", lyrKey:"haifeng-yueding",
-      src:"haifeng-yueding.mp3", cover:"music/haifeng-yueding.jpg" },
-    { g:"原创歌曲", title:"草原的风捎来我的念", artist:"单曲", tag:"民谣 · 思念", lyrKey:"caoyuan-feng",
-      src:"caoyuan-feng.mp3", cover:"music/caoyuan-feng.jpg" },
-    { g:"原创歌曲", title:"东北爷们的酒与愁", artist:"单曲", tag:"叙事 · 烟火气", lyrKey:"dongbei-jiu",
-      src:"dongbei-jiu.mp3", cover:"music/dongbei-jiu.jpg" },
     { g:"原创歌曲", title:"江湖行", artist:"单曲", tag:"武侠 · 江湖",
       src:"jianghu-xing.mp3", cover:"music/qingping-jianxing.jpg" },
     { g:"原创歌曲", title:"梦里剑光", artist:"单曲", tag:"武侠 · 器乐",
@@ -656,8 +645,16 @@ const SITE = {
       src:"chenghuangxu-01.mp3", cover:"music/shanhai-music.jpg" },
     { g:"原创歌曲", title:"乘黄墟 · 三", artist:"山海照夜录 · 配乐", tag:"东方奇幻 · 变奏",
       src:"chenghuangxu-03.mp3", cover:"music/shanhai-music.jpg" },
-
-    /* ---- 情绪配乐（AI 生成 BGM，附情绪标签） ---- */
+    { g:"原创歌曲", title:"真心总被谎言辜负", artist:"单曲", tag:"伤感 · 都市", lyrKey:"zhenxin-huangyan",
+      src:"zhenxin-huangyan.mp3", cover:"music/zhenxin-huangyan.jpg" },
+    { g:"原创歌曲", title:"人生就要潇洒走", artist:"单曲", tag:"洒脱", lyrKey:"xiaosa-zou",
+      src:"xiaosa-zou.mp3", cover:"music/xiaosa-zou.jpg" },
+    { g:"原创歌曲", title:"海风吹不散的约定", artist:"单曲", tag:"抒情", lyrKey:"haifeng-yueding",
+      src:"haifeng-yueding.mp3", cover:"music/haifeng-yueding.jpg" },
+    { g:"原创歌曲", title:"草原的风捎来我的念", artist:"单曲", tag:"民谣 · 思念", lyrKey:"caoyuan-feng",
+      src:"caoyuan-feng.mp3", cover:"music/caoyuan-feng.jpg" },
+    { g:"原创歌曲", title:"东北爷们的酒与愁", artist:"单曲", tag:"叙事 · 烟火气", lyrKey:"dongbei-jiu",
+      src:"dongbei-jiu.mp3", cover:"music/dongbei-jiu.jpg" },
     { g:"情绪配乐", title:"悬疑", artist:"AI BGM · 60s", tag:"mystery", src:"bgm-mystery.mp3", cover:"music/yiwang-music.jpg" },
     { g:"情绪配乐", title:"暗黑", artist:"AI BGM · 60s", tag:"dark", src:"bgm-dark.mp3", cover:"music/yiwang-music.jpg" },
     { g:"情绪配乐", title:"紧绷", artist:"AI BGM · 60s", tag:"tension", src:"bgm-tension.mp3", cover:"music/yiwang-music.jpg" },
@@ -789,7 +786,11 @@ renderWorks();
 const lb = document.getElementById("lb"), lbV = document.getElementById("lbV");
 const lbT = document.getElementById("lbT"), lbD = document.getElementById("lbD");
 const lbMsg = document.getElementById("lbMsg");
+let musicResume = false;
 function openLB(src, title, desc){
+  /* 移动端互斥修复：先暂停背景音乐，否则视频音轨会被系统静音 */
+  musicResume = (cur >= 0 && !audio.paused);
+  if (!audio.paused) audio.pause();
   lbT.textContent = title; lbD.textContent = desc || "";
   lbMsg.hidden = true; lbMsg.textContent = "";
   lbV.src = "video/" + src;
@@ -799,6 +800,8 @@ function openLB(src, title, desc){
 function closeLB(){
   lbV.pause(); lbV.removeAttribute("src"); lbV.load();
   lb.hidden = true; document.body.style.overflow = "";
+  /* 关闭视频后，若音乐之前在播则自动恢复 */
+  if (musicResume){ musicResume = false; audio.play().catch(()=>{}); }
 }
 /* 视频文件缺失时给出明确提示，而不是留一个黑框 */
 lbV.addEventListener("error", () => {
@@ -842,7 +845,7 @@ function fmt(s){
 })();
 function renderLyrics(t){
   lyrTitle.textContent = t ? t.title : "";
-  if (!t){ lyricsEl.innerHTML = `<div class="ln empty">从右边选一首歌 →</div>`; return; }
+  if (!t){ lyricsEl.innerHTML = `<div class="ln empty">点上方曲目播放，歌词会显示在这里</div>`; return; }
   if (!t.lyrKey){
     lyricsEl.innerHTML = `<div class="ln empty">纯音乐 · 无歌词${t.tag ? `<br><span style="opacity:.65">情绪标签：${t.tag}</span>` : ""}</div>`;
     return;
@@ -852,9 +855,12 @@ function renderLyrics(t){
     lyricsEl.innerHTML = `<div class="ln empty">这首歌暂无歌词文本</div>`;
     return;
   }
-  lyricsEl.innerHTML = L.map((x,i)=>`<div class="ln${i===0?" on":""}" data-i="${i}">${x}</div>`).join("");
+  lyricsEl.innerHTML = L.map(x=>`<div class="ln">${x}</div>`).join("");
 }
 function startPlay(){
+  /* 防重叠：播音乐前先暂停可能还在播放的视频 */
+  const v = document.getElementById("lbV");
+  if (v && !v.paused) v.pause();
   const p = audio.play();
   if (p && p.catch) p.catch(err => {
     playBtn.textContent = "▶";
@@ -896,17 +902,7 @@ audio.addEventListener("timeupdate", () => {
   tCur.textContent = fmt(audio.currentTime);
   const p = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
   barFill.style.width = p + "%";
-  const t = TRACKS[cur];
-  const L = (t && t.lyrKey && LYRICS[t.lyrKey]) || [];
-  if (L.length && audio.duration > 4){
-    /* 歌词没有时间轴 → 按播放进度均匀分配，做近似滚动高亮 */
-    const span = audio.duration - 5;
-    let idx = Math.floor(((audio.currentTime - 2.5) / span) * L.length);
-    idx = Math.max(0, Math.min(L.length - 1, idx));
-    lyricsEl.querySelectorAll(".ln").forEach((el,k)=>el.classList.toggle("on", k === idx));
-    const on = lyricsEl.querySelector(".ln.on");
-    if (on) lyricsEl.scrollTop = on.offsetTop - lyricsEl.clientHeight/2 + on.clientHeight/2;
-  }
+
 });
 bar.addEventListener("click", e => {
   if (!audio.duration) return;
